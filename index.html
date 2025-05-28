@@ -1,126 +1,206 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Live Vote Count</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 10px;
-      background: #f7f9fc;
-    }
-    h2 {
       text-align: center;
-      color: #2c3e50;
+      background-color: #f8f9fa;
+    }
+    .vote-container, .leading-candidates-container {
+      width: 90%;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+    .message-box {
+      width: 90%;
+      padding: 10px;
+      background: yellow;
+      color: black;
+      font-weight: bold;
+      border-radius: 5px;
+      box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+      margin: 10px auto;
+    }
+    h1, h2 {
+      color: #007bff;
     }
     table {
-      border-collapse: collapse;
       width: 100%;
-      background-color: #fff;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      margin-top: 20px;
+      border-collapse: collapse;
+      margin-top: 10px;
     }
     th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
       text-align: center;
-      padding: 12px;
-      border: 1px solid #ccc;
     }
     th {
-      background-color: #3498db;
+      background-color: #007bff;
       color: white;
     }
-    #exportBtn {
-      margin: 20px auto;
-      display: block;
-      background: #2ecc71;
+    .updated-time {
+      font-size: 12px;
+      color: gray;
+      margin-top: 10px;
+    }
+    .export-btn {
+      margin: 10px;
+      padding: 8px 16px;
+      background-color: #28a745;
       color: white;
-      padding: 10px 20px;
       border: none;
-      font-size: 16px;
       border-radius: 5px;
       cursor: pointer;
-    }
-    #exportBtn:hover {
-      background-color: #27ae60;
-    }
-    #pdf-footer {
-      text-align: center;
-      margin-top: 20px;
-      font-style: italic;
-      color: #555;
-      font-size: 13px;
     }
   </style>
 </head>
 <body>
 
-  <h2>📊 Live Vote Count</h2>
+  <h1>📊 Live Vote Count</h1>
+  <div id="vote-container"></div>
+  <p class="updated-time" id="last-updated">Last Updated: Fetching...</p>
+  <button class="export-btn" onclick="exportPDF()">Export as PDF</button>
 
-  <div id="table-container">
-    <table id="voteTable">
-      <thead>
-        <tr>
-          <th>Candidate</th>
-          <th>Votes</th>
-        </tr>
-      </thead>
-      <tbody id="voteBody">
-        <!-- Data loads here -->
-      </tbody>
+  <div class="leading-candidates-container">
+    <h2>🏆 Leading Candidates</h2>
+    <table id="leading-candidates-table">
+      <tr><th>Post</th><th>Candidate</th><th>Votes</th></tr>
     </table>
-    <div id="pdf-footer">
-      Downloaded from https://aminulmaz.blogspot.com/p/live-vote-count.html
-    </div>
   </div>
 
-  <button id="exportBtn">📄 Export as PDF</button>
-
-  <!-- Load vote data -->
   <script>
-    const sheetID = '1rxl9GSRZSQUqzU30WOMjzeg7ZeZHPSAlqLrbd5zp8cc';
-    const sheetName = 'Sheet1';
-    const url = `https://opensheet.elk.sh/${sheetID}/${sheetName}`;
+    let globalVoteData = [];
 
     async function fetchVotes() {
+      const url = "https://docs.google.com/spreadsheets/d/1rxl9GSRZSQUqzU30WOMjzeg7ZeZHPSAlqLrbd5zp8cc/gviz/tq?tqx=out:json";
       try {
-        const response = await fetch(url);
-        const data = await response.json();
+        const response = await fetch(url, { cache: "no-store" });
+        const text = await response.text();
+        const json = JSON.parse(text.substring(47, text.length - 2));
+        const rows = json.table.rows;
 
-        const voteBody = document.getElementById('voteBody');
-        voteBody.innerHTML = '';
+        if (!rows || rows.length === 0) {
+          document.getElementById("vote-container").innerHTML = "<p style='color:red;'>⚠️ No data found! Check Sheet ID or permissions.</p>";
+          return;
+        }
 
-        data.forEach(row => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${row.Candidate}</td>
-            <td>${row.Votes}</td>
-          `;
-          voteBody.appendChild(tr);
+        let voteData = [];
+        let voteMap = {};
+        let messages = {};
+
+        rows.forEach(row => {
+          let post = row.c[0] ? row.c[0].v : "Unknown";
+          let name = row.c[1] ? row.c[1].v : "Unknown";
+          let votes = row.c[2] ? parseInt(row.c[2].v) : 0;
+          let message = row.c[3] ? row.c[3].v : "";
+
+          if (!voteMap[post]) voteMap[post] = [];
+          voteMap[post].push({ name, votes });
+
+          voteData.push({ post, name, votes });
+          if (message) messages[post] = message;
         });
+
+        globalVoteData = voteData;
+
+        let htmlContent = "";
+        for (let post in voteMap) {
+          let candidates = voteMap[post];
+          let maxVotes = Math.max(...candidates.map(c => c.votes));
+
+          htmlContent += `<div class="vote-container">
+            <h2>${post}</h2>`;
+
+          if (messages[post]) {
+            htmlContent += `<div class="message-box">🔔 ${messages[post]}</div>`;
+          }
+
+          htmlContent += `<table><tr><th>Candidate</th><th>Votes</th></tr>`;
+          candidates.forEach(candidate => {
+            let arrow = candidate.votes === maxVotes ? " ⏫️" : "";
+            htmlContent += `<tr><td>${candidate.name}${arrow}</td><td>${candidate.votes}</td></tr>`;
+          });
+          htmlContent += `</table></div>`;
+        }
+
+        document.getElementById("vote-container").innerHTML = htmlContent;
+        document.getElementById("last-updated").innerText = "Last Updated: " + new Date().toLocaleTimeString();
+
+        updateLeadingCandidates(voteData);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching votes:", error);
+        document.getElementById("vote-container").innerHTML = "<p style='color:red;'>⚠️ Error loading votes!</p>";
       }
     }
 
+    function updateLeadingCandidates(voteData) {
+      let postWiseLeaders = {};
+      voteData.forEach(candidate => {
+        let post = candidate.post;
+        if (!postWiseLeaders[post] || candidate.votes > postWiseLeaders[post].votes) {
+          postWiseLeaders[post] = candidate;
+        }
+      });
+
+      let tableHTML = "<tr><th>Post</th><th>Candidate</th><th>Votes</th></tr>";
+      for (let post in postWiseLeaders) {
+        let leader = postWiseLeaders[post];
+        tableHTML += `<tr>
+          <td>${post}</td>
+          <td>${leader.name} ⏫</td>
+          <td>${leader.votes}</td>
+        </tr>`;
+      }
+      document.getElementById("leading-candidates-table").innerHTML = tableHTML;
+    }
+
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      let y = 10;
+
+      doc.setFontSize(14);
+      doc.text("📊 Live Vote Count Report", 10, y);
+      y += 10;
+
+      const posts = {};
+
+      globalVoteData.forEach(({ post, name, votes }) => {
+        if (!posts[post]) posts[post] = [];
+        posts[post].push({ name, votes });
+      });
+
+      for (const post in posts) {
+        doc.setFontSize(12);
+        doc.text(`\n🔹 ${post}`, 10, y);
+        y += 8;
+
+        posts[post].forEach(({ name, votes }) => {
+          doc.setFontSize(11);
+          doc.text(`- ${name}: ${votes} votes`, 12, y);
+          y += 7;
+        });
+        y += 5;
+      }
+
+      y += 10;
+      doc.setFontSize(10);
+      doc.text("Downloaded from: aminulmaz.blogspot.com/p/live-vote-count.html", 10, y);
+
+      doc.save("Live_Vote_Report.pdf");
+    }
+
+    setInterval(fetchVotes, 5000);
     fetchVotes();
-    setInterval(fetchVotes, 10000);
   </script>
-
-  <!-- html2pdf.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script>
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      const element = document.getElementById("table-container");
-      const opt = {
-        margin:       0.3,
-        filename:     'Live_Vote_Count.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-      html2pdf().set(opt).from(element).save();
-    });
-  </script>
-
 </body>
 </html>
