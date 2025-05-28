@@ -1,126 +1,126 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Live Vote Count</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Live Vote Count</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f8f9fa;
-        }
-        .vote-container {
-            width: 90%;
-            max-width: 600px;
-            margin: auto;
-            padding: 20px;
-            background: white;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-        .message-box {
-            width: 90%;
-            padding: 10px;
-            background: yellow;
-            color: black;
-            font-weight: bold;
-            border-radius: 5px;
-            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
-            margin: 10px auto;
-        }
-        h2 {
-            color: #007bff;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        .updated-time {
-            font-size: 12px;
-            color: gray;
-            margin-top: 10px;
-        }
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f8f9fa;
+    }
+    .vote-container {
+        width: 90%;
+        max-width: 600px;
+        margin: auto;
+        padding: 20px;
+        background: white;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    .message-box {
+        width: 90%;
+        padding: 10px;
+        background: yellow;
+        color: black;
+        font-weight: bold;
+        border-radius: 5px;
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+        margin: 10px auto;
+    }
+    h2 {
+        color: #007bff;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+    th {
+        background-color: #007bff;
+        color: white;
+    }
+    .updated-time {
+        font-size: 12px;
+        color: gray;
+        margin-top: 10px;
+    }
 
-        .leading-candidates-container {
-            width: 90%;
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            background: white;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            text-align: center;
-        }
-        .leading-candidates-container h2 {
-            color: #007bff;
-        }
-        #leading-candidates-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        #leading-candidates-table th, #leading-candidates-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-        #leading-candidates-table th {
-            background-color: #007bff;
-            color: white;
-        }
+    .leading-candidates-container {
+        width: 90%;
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background: white;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        text-align: center;
+    }
+    .leading-candidates-container h2 {
+        color: #007bff;
+    }
+    #leading-candidates-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    #leading-candidates-table th, #leading-candidates-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+    #leading-candidates-table th {
+        background-color: #007bff;
+        color: white;
+    }
 
-        #export-btn {
-            margin: 20px auto;
-            padding: 12px 24px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            display: block;
-        }
-        #export-btn:hover {
-            background-color: #0056b3;
-        }
-    </style>
+    #export-btn {
+        margin: 20px auto;
+        padding: 12px 24px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        display: block;
+    }
+    #export-btn:hover {
+        background-color: #0056b3;
+    }
+</style>
 
-    <!-- jsPDF library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- html2canvas library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- jsPDF library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- html2canvas library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-    <h1>📊 Live Vote Count</h1>
-    <div id="vote-container"></div>
-    <p class="updated-time" id="last-updated">Last Updated: Fetching...</p>
+<h1>📊 Live Vote Count</h1>
+<div id="vote-container"></div>
+<p class="updated-time" id="last-updated">Last Updated: Fetching...</p>
 
-    <button id="export-btn">Export Vote Count as PDF</button>
+<button id="export-btn">Export Vote Count as PDF</button>
 
-    <div class="leading-candidates-container">
-        <h2>🏆 Leading Candidates</h2>
-        <table id="leading-candidates-table">
-            <tr>
-                <th>Post</th>
-                <th>Candidate</th>
-                <th>Votes</th>
-            </tr>
-            <!-- Data will be inserted dynamically -->
-        </table>
-    </div>
+<div class="leading-candidates-container">
+    <h2>🏆 Leading Candidates</h2>
+    <table id="leading-candidates-table">
+        <tr>
+            <th>Post</th>
+            <th>Candidate</th>
+            <th>Votes</th>
+        </tr>
+        <!-- Data will be inserted dynamically -->
+    </table>
+</div>
 
 <script>
     async function fetchVotes() {
@@ -218,36 +218,78 @@
         document.getElementById("leading-candidates-table").innerHTML = tableHTML;
     }
 
-    // Export PDF using html2canvas + jsPDF (clean rendering)
     async function exportPDF() {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
+        const voteContainer = document.getElementById("vote-container");
 
-        const element = document.body; // Full page capture
-        const scale = 2; // Increase for better quality
+        // Use a higher scale for better quality
+        const scale = 2;
+        const canvas = await html2canvas(voteContainer, { scale, useCORS: true });
 
-        const canvas = await html2canvas(element, { scale });
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL("image/png");
+        const imgProps = pdf.getImageProperties(imgData);
 
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        // Calculate the number of pages
+        const imgWidth = imgProps.width;
+        const imgHeight = imgProps.height;
 
-        // Add footer text (source URL)
-        const footerText = "Downloaded from: " + window.location.href;
-        pdf.setFontSize(10);
-        pdf.setTextColor(100);
-        pdf.text(footerText, 10, pdf.internal.pageSize.getHeight() - 10);
+        // Scale image width to pdf page width
+        const ratio = pdfWidth / imgWidth;
+        const scaledHeight = imgHeight * ratio;
 
-        pdf.save('Live_Vote_Report.pdf');
+        let position = 0;
+
+        // Add multiple pages if the content is longer than one page
+        while (position < scaledHeight) {
+            if (position > 0) {
+                pdf.addPage();
+            }
+
+            // Calculate the portion of image to draw on current page
+            const pageCanvas = document.createElement("canvas");
+            pageCanvas.width = imgWidth;
+            // Calculate pixels per mm: canvas.width / pdfWidth in mm
+            const pxPerMm = imgWidth / pdfWidth;
+            // Height in pixels for one page:
+            const pageHeightPx = pdfHeight * pxPerMm;
+
+            pageCanvas.height = Math.min(pageHeightPx, imgHeight - position / ratio * pxPerMm);
+            const ctx = pageCanvas.getContext("2d");
+
+            // Draw the slice of the full canvas onto pageCanvas
+            ctx.drawImage(
+                canvas,
+                0, position / ratio * pxPerMm,  // source x, y
+                imgWidth, pageCanvas.height,   // source width, height
+                0, 0,                         // destination x, y
+                imgWidth, pageCanvas.height    // destination width, height
+            );
+
+            const pageData = pageCanvas.toDataURL("image/png");
+
+            // Add image to pdf
+            pdf.addImage(pageData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+            // Add footer text
+            const footerText = "Downloaded from: " + window.location.href;
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            pdf.text(footerText, 10, pdfHeight - 10);
+
+            position += pdfHeight;
+        }
+
+        pdf.save("Live_Vote_Report.pdf");
     }
 
-    // Set interval and event listeners
     setInterval(fetchVotes, 5000);
     fetchVotes();
 
-    document.getElementById('export-btn').addEventListener('click', exportPDF);
+    document.getElementById("export-btn").addEventListener("click", exportPDF);
 </script>
 </body>
 </html>
