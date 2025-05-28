@@ -1,306 +1,120 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Live Vote Count</title>
-
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    background-color: #f8f9fa;
-  }
-  .vote-container {
-    width: 90%;
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-  }
-  .message-box {
-    width: 90%;
-    padding: 10px;
-    background: yellow;
-    color: black;
-    font-weight: bold;
-    border-radius: 5px;
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
-    margin: 10px auto;
-  }
-  h2 {
-    color: #007bff;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-  }
-  th {
-    background-color: #007bff;
-    color: white;
-  }
-  .updated-time {
-    font-size: 12px;
-    color: gray;
-    margin-top: 10px;
-  }
-
-  /* Leading candidates */
-  .leading-candidates-container {
-    width: 90%;
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    text-align: center;
-  }
-  .leading-candidates-container h2 {
-    color: #007bff;
-  }
-  #leading-candidates-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  #leading-candidates-table th, #leading-candidates-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-  }
-  #leading-candidates-table th {
-    background-color: #007bff;
-    color: white;
-  }
-
-  /* Export button styling */
-  #export-btn {
-    margin: 20px auto;
-    padding: 10px 25px;
-    font-size: 16px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  #export-btn:hover {
-    background-color: #0056b3;
-  }
-</style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AUSU Live Vote Counting</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    #last-updated {
+      margin-top: 10px;
+      font-size: 14px;
+      text-align: center;
+    }
+    #download-btn {
+      margin-top: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #download-btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
+  <h1>AUSU Live Vote Counting</h1>
+  <button id="download-btn">Download PDF Report</button>
+  <div id="tracker">
+    <div id="last-updated">Loading data...</div>
+    <table id="data-table">
+      <thead>
+        <tr></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>  <script>
+    const sheetId = "18aY0SxIemeSwZ5H7MPWBViBWQaRVM8WUbfkre1riLIM";
+    const sheetName = "Sheet1";
+    const url = https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${sheetName};
 
-  <h1>📊 Live Vote Count</h1>
+    fetch(url)
+      .then(res => res.text())
+      .then(rep => {
+        const jsonData = JSON.parse(rep.substr(47).slice(0, -2));
+        const colz = [];
+        const dataTable = document.getElementById("data-table");
+        const thead = dataTable.querySelector("thead tr");
+        const tbody = dataTable.querySelector("tbody");
 
-  <!-- Container to export -->
-  <div id="exportable-content">
-
-    <div id="vote-container"></div>
-
-    <div class="leading-candidates-container">
-      <h2>🏆 Leading Candidates</h2>
-      <table id="leading-candidates-table">
-        <tr>
-          <th>Post</th>
-          <th>Candidate</th>
-          <th>Votes</th>
-        </tr>
-      </table>
-    </div>
-
-    <p class="updated-time" id="last-updated">Last Updated: Fetching...</p>
-  </div>
-
-  <button id="export-btn">Export as PDF</button>
-
-  <!-- Scripts for fetching and displaying data -->
-  <script>
-    async function fetchVotes() {
-      const url = "https://docs.google.com/spreadsheets/d/1rxl9GSRZSQUqzU30WOMjzeg7ZeZHPSAlqLrbd5zp8cc/gviz/tq?tqx=out:json";
-      try {
-        const response = await fetch(url, { cache: "no-store" });
-        const text = await response.text();
-        const json = JSON.parse(text.substring(47, text.length - 2));
-        const rows = json.table.rows;
-
-        if (!rows || rows.length === 0) {
-          document.getElementById("vote-container").innerHTML = "<p style='color:red;'>⚠️ No data found! Check Sheet ID or permissions.</p>";
-          return;
-        }
-
-        let voteData = {};
-        let messages = {}; // Stores custom messages for each post
-        let allCandidatesArray = [];
-
-        rows.forEach(row => {
-          let post = row.c[0] ? row.c[0].v : "Unknown";
-          let name = row.c[1] ? row.c[1].v : "Unknown";
-          let votes = row.c[2] ? parseInt(row.c[2].v) : 0;
-          let message = row.c[3] ? row.c[3].v : ""; // Custom message
-
-          if (!voteData[post]) {
-            voteData[post] = [];
+        jsonData.table.cols.forEach((heading) => {
+          if (heading.label) {
+            colz.push(heading.label);
+            const th = document.createElement("th");
+            th.textContent = heading.label;
+            thead.appendChild(th);
           }
-          voteData[post].push({ name, votes });
-
-          // Store message for the post (if available)
-          if (message) {
-            messages[post] = message;
-          }
-
-          allCandidatesArray.push({ post, name, votes });
         });
 
-        // Build vote count HTML per post
-        let htmlContent = "";
-        for (let post in voteData) {
-          let candidates = voteData[post];
-          let maxVotes = Math.max(...candidates.map(c => c.votes));
-
-          htmlContent += `<div class="vote-container">
-              <h2>${post}</h2>`;
-
-          if (messages[post]) {
-            htmlContent += `<div class="message-box">🔔 ${messages[post]}</div>`;
-          }
-
-          htmlContent += `<table>
-              <tr><th>Candidate</th><th>Votes</th></tr>`;
-
-          candidates.forEach(candidate => {
-            let arrow = candidate.votes === maxVotes ? " ⏫️" : "";
-            htmlContent += `<tr><td>${candidate.name}${arrow}</td><td>${candidate.votes}</td></tr>`;
+        jsonData.table.rows.forEach((rowData) => {
+          const row = document.createElement("tr");
+          colz.forEach((col, index) => {
+            const cell = document.createElement("td");
+            const cellData = rowData.c[index] ? rowData.c[index].v : "";
+            cell.textContent = cellData;
+            row.appendChild(cell);
           });
+          tbody.appendChild(row);
+        });
 
-          htmlContent += `</table></div>`;
-        }
-
-        document.getElementById("vote-container").innerHTML = htmlContent;
-
-        updateLeadingCandidates(allCandidatesArray);
-
-        document.getElementById("last-updated").innerText = "Last Updated: " + new Date().toLocaleTimeString();
-      } catch (error) {
-        console.error("Error fetching votes:", error);
-        document.getElementById("vote-container").innerHTML = "<p style='color:red;'>⚠️ Error loading votes!</p>";
-      }
-    }
-
-    function updateLeadingCandidates(voteData) {
-      let postWiseLeaders = {};
-
-      voteData.forEach(candidate => {
-        let post = candidate.post;
-        if (!postWiseLeaders[post] || candidate.votes > postWiseLeaders[post].votes) {
-          postWiseLeaders[post] = candidate;
-        }
+        const now = new Date().toLocaleString("en-IN", {
+          dateStyle: "medium",
+          timeStyle: "short"
+        });
+        document.getElementById("last-updated").textContent = Last updated: ${now};
       });
 
-      let tableHTML = "<tr><th>Post</th><th>Candidate</th><th>Votes</th></tr>";
-      for (let post in postWiseLeaders) {
-        let leader = postWiseLeaders[post];
-        tableHTML += `<tr>
-            <td>${post}</td>
-            <td>${leader.name} ⏫</td>
-            <td>${leader.votes}</td>
-        </tr>`;
-      }
-
-      document.getElementById("leading-candidates-table").innerHTML = tableHTML;
-    }
-
-    setInterval(fetchVotes, 5000);
-    fetchVotes();
-  </script>
-
-  <!-- jsPDF and html2canvas scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-  <!-- Export PDF script -->
-  <script>
-    async function exportTableToPDF() {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'mm', 'a4');
-
-      const exportableContent = document.getElementById('exportable-content');
-
-      // Increase scale for better quality
-      const scale = 2;
-
-      // Convert the entire exportable content to canvas
-      const canvas = await html2canvas(exportableContent, { scale, useCORS: true });
-
-      const imgData = canvas.toDataURL('image/png');
-      const imgProps = pdf.getImageProperties(imgData);
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const imgWidth = imgProps.width;
-      const imgHeight = imgProps.height;
-
-      // Calculate scale ratio to fit image width in PDF width
-      const ratio = pdfWidth / imgWidth;
-      const scaledHeight = imgHeight * ratio;
-
-      let position = 0;
-
-      while (position < scaledHeight) {
-        if (position > 0) pdf.addPage();
-
-        // Create a temporary canvas to hold a slice for this page
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = imgWidth;
-
-        // Pixels per mm on PDF width
-        const pxPerMm = imgWidth / pdfWidth;
-
-        // Height in px for one PDF page
-        const pageHeightPx = pdfHeight * pxPerMm;
-
-        // Limit height for last page slice
-        pageCanvas.height = Math.min(pageHeightPx, imgHeight - position / ratio * pxPerMm);
-
-        const ctx = pageCanvas.getContext('2d');
-
-        // Draw slice from the full canvas to the pageCanvas
-        ctx.drawImage(
-          canvas,
-          0,
-          position / ratio * pxPerMm,
-          imgWidth,
-          pageCanvas.height,
-          0,
-          0,
-          imgWidth,
-          pageCanvas.height
-        );
-
-        const pageData = pageCanvas.toDataURL('image/png');
-
-        // Add the slice image to PDF page
-        pdf.addImage(pageData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-        // Footer text on every page
-        const footerText = 'Downloaded from: ' + window.location.href;
-        pdf.setFontSize(10);
-        pdf.setTextColor(100);
-        pdf.text(footerText, 10, pdfHeight - 10);
-
-        position += pdfHeight;
-      }
-
-      pdf.save('Live_Vote
-               document.getElementById("export-btn").addEventListener("click", exportTableToPDF);
+    document.getElementById("download-btn").addEventListener("click", () => {
+      const element = document.getElementById("tracker");
+      const opt = {
+        margin: 0.5,
+        filename: COVID_Tracker_Report_${new Date().toISOString().split('T')[0]}.pdf,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opt).from(element).save();
+    });
+  </script></body>
+</html>
