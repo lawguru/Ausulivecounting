@@ -15,7 +15,7 @@
 
   <div id="loader" class="text-center py-10 text-lg text-blue-500">Loading data...</div>
 
-  <div id="exportable-content" class="overflow-x-auto hidden">
+  <div id="table-container" class="overflow-x-auto hidden">
     <table id="covid-table" class="min-w-full divide-y divide-gray-200 bg-white shadow-md rounded-lg">
       <thead class="bg-blue-600 text-white">
         <tr id="table-head"></tr>
@@ -24,21 +24,23 @@
     </table>
   </div>
 
-  <!-- PDF export libraries -->
+  <!-- jsPDF and AutoTable libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <script>
-    // ✅ CHANGE this to your actual public Google Sheet ID
     const sheetID = '18aY0SxIemeSwZ5H7MPWBViBWQaRVM8WUbfkre1riLIM';
-    const sheetName = 'Sheet1'; // Make sure this matches
+    const sheetName = 'Sheet1';
     const apiURL = `https://opensheet.elk.sh/${sheetID}/${sheetName}`;
+
+    let tableData = [];
+    let tableHeaders = [];
 
     fetch(apiURL)
       .then(res => res.json())
       .then(data => {
         const loader = document.getElementById("loader");
-        const table = document.getElementById("exportable-content");
+        const table = document.getElementById("table-container");
         const thead = document.getElementById("table-head");
         const tbody = document.getElementById("table-body");
 
@@ -47,25 +49,29 @@
           return;
         }
 
-        // Build headers
-        const headers = Object.keys(data[0]);
-        headers.forEach(header => {
+        tableHeaders = Object.keys(data[0]);
+
+        // Render headers
+        tableHeaders.forEach(header => {
           const th = document.createElement("th");
           th.textContent = header;
           th.className = "px-4 py-2 text-left";
           thead.appendChild(th);
         });
 
-        // Build rows
+        // Render rows and store for export
         data.forEach(row => {
           const tr = document.createElement("tr");
-          headers.forEach(header => {
+          const rowData = [];
+          tableHeaders.forEach(header => {
             const td = document.createElement("td");
             td.textContent = row[header] || '';
             td.className = "px-4 py-2";
             tr.appendChild(td);
+            rowData.push(row[header] || '');
           });
           tbody.appendChild(tr);
+          tableData.push(rowData);
         });
 
         loader.classList.add("hidden");
@@ -76,65 +82,28 @@
         console.error("Data fetch error:", err);
       });
 
-    async function exportTableToPDF() {
+    document.getElementById("export-btn").addEventListener("click", () => {
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const doc = new jsPDF('l', 'mm', 'a4'); // landscape mode for wide tables
 
-      const exportableContent = document.getElementById('exportable-content');
-      const scale = 2;
+      doc.text("District-wise COVID-19 Tracker", 14, 15);
+      doc.autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: 20,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        theme: 'grid',
+        didDrawPage: function (data) {
+          doc.setFontSize(10);
+          doc.text(`Page ${doc.internal.getNumberOfPages()}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+        }
+      });
 
-      const canvas = await html2canvas(exportableContent, { scale, useCORS: true });
-      const imgData = canvas.toDataURL('image/png');
-      const imgProps = pdf.getImageProperties(imgData);
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const imgWidth = imgProps.width;
-      const imgHeight = imgProps.height;
-
-      const ratio = pdfWidth / imgWidth;
-      const scaledHeight = imgHeight * ratio;
-
-      let position = 0;
-
-      while (position < scaledHeight) {
-        if (position > 0) pdf.addPage();
-
-        const pageCanvas = document.createElement('canvas');
-        pageCanvas.width = imgWidth;
-        const pxPerMm = imgWidth / pdfWidth;
-        const pageHeightPx = pdfHeight * pxPerMm;
-        pageCanvas.height = Math.min(pageHeightPx, imgHeight - position / ratio * pxPerMm);
-
-        const ctx = pageCanvas.getContext('2d');
-        ctx.drawImage(
-          canvas,
-          0,
-          position / ratio * pxPerMm,
-          imgWidth,
-          pageCanvas.height,
-          0,
-          0,
-          imgWidth,
-          pageCanvas.height
-        );
-
-        const pageData = pageCanvas.toDataURL('image/png');
-        pdf.addImage(pageData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-        const footerText = 'Downloaded from: ' + window.location.href;
-        pdf.setFontSize(10);
-        pdf.setTextColor(100);
-        pdf.text(footerText, 10, pdfHeight - 10);
-
-        position += pdfHeight;
-      }
-
-      pdf.save('COVID-Tracker.pdf');
-    }
-
-    document.getElementById("export-btn").addEventListener("click", exportTableToPDF);
+      doc.save("COVID-Tracker.pdf");
+    });
   </script>
 </body>
 </html>
