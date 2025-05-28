@@ -43,6 +43,13 @@
     #exportBtn:hover {
       background-color: #27ae60;
     }
+    #pdf-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-style: italic;
+      color: #555;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -58,16 +65,19 @@
         </tr>
       </thead>
       <tbody id="voteBody">
-        <!-- Data will load here -->
+        <!-- Data loads here -->
       </tbody>
     </table>
+    <div id="pdf-footer">
+      Downloaded from https://aminulmaz.blogspot.com/p/live-vote-count.html
+    </div>
   </div>
 
   <button id="exportBtn">📄 Export as PDF</button>
 
-  <!-- Load Sheet data -->
+  <!-- Load vote data -->
   <script>
-    const sheetID = '1wDs5lY4wxfsqtB7pt4Eb6jqJ7Y1OzPmtO_xn0_WUuV0';
+    const sheetID = '1rxl9GSRZSQUqzU30WOMjzeg7ZeZHPSAlqLrbd5zp8cc';
     const sheetName = 'Sheet1';
     const url = `https://opensheet.elk.sh/${sheetID}/${sheetName}`;
 
@@ -92,7 +102,6 @@
       }
     }
 
-    // Auto-refresh every 10 seconds
     fetchVotes();
     setInterval(fetchVotes, 10000);
   </script>
