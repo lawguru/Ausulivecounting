@@ -1,206 +1,253 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Live Vote Count</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f8f9fa;
-    }
-    .vote-container, .leading-candidates-container {
-      width: 90%;
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
-      background: white;
-      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-    }
-    .message-box {
-      width: 90%;
-      padding: 10px;
-      background: yellow;
-      color: black;
-      font-weight: bold;
-      border-radius: 5px;
-      box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
-      margin: 10px auto;
-    }
-    h1, h2 {
-      color: #007bff;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background-color: #007bff;
-      color: white;
-    }
-    .updated-time {
-      font-size: 12px;
-      color: gray;
-      margin-top: 10px;
-    }
-    .export-btn {
-      margin: 10px;
-      padding: 8px 16px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Live Vote Count</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        .vote-container {
+            width: 90%;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .message-box {
+            width: 90%;
+            padding: 10px;
+            background: yellow;
+            color: black;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+            margin: 10px auto;
+        }
+        h2 {
+            color: #007bff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .updated-time {
+            font-size: 12px;
+            color: gray;
+            margin-top: 10px;
+        }
+
+        .leading-candidates-container {
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+        .leading-candidates-container h2 {
+            color: #007bff;
+        }
+        #leading-candidates-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        #leading-candidates-table th, #leading-candidates-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        #leading-candidates-table th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        #export-btn {
+            margin: 20px auto;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            display: block;
+        }
+        #export-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+    <!-- jsPDF library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2canvas library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
+    <h1>📊 Live Vote Count</h1>
+    <div id="vote-container"></div>
+    <p class="updated-time" id="last-updated">Last Updated: Fetching...</p>
 
-  <h1>📊 Live Vote Count</h1>
-  <div id="vote-container"></div>
-  <p class="updated-time" id="last-updated">Last Updated: Fetching...</p>
-  <button class="export-btn" onclick="exportPDF()">Export as PDF</button>
+    <button id="export-btn">Export Vote Count as PDF</button>
 
-  <div class="leading-candidates-container">
-    <h2>🏆 Leading Candidates</h2>
-    <table id="leading-candidates-table">
-      <tr><th>Post</th><th>Candidate</th><th>Votes</th></tr>
-    </table>
-  </div>
+    <div class="leading-candidates-container">
+        <h2>🏆 Leading Candidates</h2>
+        <table id="leading-candidates-table">
+            <tr>
+                <th>Post</th>
+                <th>Candidate</th>
+                <th>Votes</th>
+            </tr>
+            <!-- Data will be inserted dynamically -->
+        </table>
+    </div>
 
-  <script>
-    let globalVoteData = [];
-
+<script>
     async function fetchVotes() {
-      const url = "https://docs.google.com/spreadsheets/d/1rxl9GSRZSQUqzU30WOMjzeg7ZeZHPSAlqLrbd5zp8cc/gviz/tq?tqx=out:json";
-      try {
-        const response = await fetch(url, { cache: "no-store" });
-        const text = await response.text();
-        const json = JSON.parse(text.substring(47, text.length - 2));
-        const rows = json.table.rows;
+        const url = "https://docs.google.com/spreadsheets/d/1rxl9GSRZSQUqzU30WOMjzeg7ZeZHPSAlqLrbd5zp8cc/gviz/tq?tqx=out:json";
+        try {
+            const response = await fetch(url, { cache: "no-store" });
+            const text = await response.text();
+            const json = JSON.parse(text.substring(47, text.length - 2));
+            const rows = json.table.rows;
 
-        if (!rows || rows.length === 0) {
-          document.getElementById("vote-container").innerHTML = "<p style='color:red;'>⚠️ No data found! Check Sheet ID or permissions.</p>";
-          return;
+            if (!rows || rows.length === 0) {
+                document.getElementById("vote-container").innerHTML = "<p style='color:red;'>⚠️ No data found! Check Sheet ID or permissions.</p>";
+                return;
+            }
+
+            let voteData = {};
+            let messages = {}; // Stores custom messages for each post
+
+            rows.forEach(row => {
+                let post = row.c[0] ? row.c[0].v : "Unknown";
+                let name = row.c[1] ? row.c[1].v : "Unknown";
+                let votes = row.c[2] ? parseInt(row.c[2].v) : 0;
+                let message = row.c[3] ? row.c[3].v : ""; // Custom message
+
+                if (!voteData[post]) {
+                    voteData[post] = [];
+                }
+                voteData[post].push({ name, votes, post });
+
+                // Store message for the post (if available)
+                if (message) {
+                    messages[post] = message;
+                }
+            });
+
+            let htmlContent = "";
+            for (let post in voteData) {
+                let candidates = voteData[post];
+                let maxVotes = Math.max(...candidates.map(c => c.votes));
+
+                htmlContent += `<div class="vote-container">
+                    <h2>${post}</h2>`;
+
+                if (messages[post]) {
+                    htmlContent += `<div class="message-box">🔔 ${messages[post]}</div>`;
+                }
+
+                htmlContent += `<table>
+                    <tr><th>Candidate</th><th>Votes</th></tr>`;
+
+                candidates.forEach(candidate => {
+                    let arrow = candidate.votes === maxVotes ? " ⏫️" : "";
+                    htmlContent += `<tr><td>${candidate.name}${arrow}</td><td>${candidate.votes}</td></tr>`;
+                });
+
+                htmlContent += `</table></div>`;
+            }
+
+            document.getElementById("vote-container").innerHTML = htmlContent;
+            document.getElementById("last-updated").innerText = "Last Updated: " + new Date().toLocaleTimeString();
+
+            // Prepare flat voteData array for leading candidates update
+            let flatVoteData = [];
+            for (let post in voteData) {
+                voteData[post].forEach(cand => flatVoteData.push(cand));
+            }
+            updateLeadingCandidates(flatVoteData);
+
+        } catch (error) {
+            console.error("Error fetching votes:", error);
+            document.getElementById("vote-container").innerHTML = "<p style='color:red;'>⚠️ Error loading votes!</p>";
         }
-
-        let voteData = [];
-        let voteMap = {};
-        let messages = {};
-
-        rows.forEach(row => {
-          let post = row.c[0] ? row.c[0].v : "Unknown";
-          let name = row.c[1] ? row.c[1].v : "Unknown";
-          let votes = row.c[2] ? parseInt(row.c[2].v) : 0;
-          let message = row.c[3] ? row.c[3].v : "";
-
-          if (!voteMap[post]) voteMap[post] = [];
-          voteMap[post].push({ name, votes });
-
-          voteData.push({ post, name, votes });
-          if (message) messages[post] = message;
-        });
-
-        globalVoteData = voteData;
-
-        let htmlContent = "";
-        for (let post in voteMap) {
-          let candidates = voteMap[post];
-          let maxVotes = Math.max(...candidates.map(c => c.votes));
-
-          htmlContent += `<div class="vote-container">
-            <h2>${post}</h2>`;
-
-          if (messages[post]) {
-            htmlContent += `<div class="message-box">🔔 ${messages[post]}</div>`;
-          }
-
-          htmlContent += `<table><tr><th>Candidate</th><th>Votes</th></tr>`;
-          candidates.forEach(candidate => {
-            let arrow = candidate.votes === maxVotes ? " ⏫️" : "";
-            htmlContent += `<tr><td>${candidate.name}${arrow}</td><td>${candidate.votes}</td></tr>`;
-          });
-          htmlContent += `</table></div>`;
-        }
-
-        document.getElementById("vote-container").innerHTML = htmlContent;
-        document.getElementById("last-updated").innerText = "Last Updated: " + new Date().toLocaleTimeString();
-
-        updateLeadingCandidates(voteData);
-      } catch (error) {
-        console.error("Error fetching votes:", error);
-        document.getElementById("vote-container").innerHTML = "<p style='color:red;'>⚠️ Error loading votes!</p>";
-      }
     }
 
     function updateLeadingCandidates(voteData) {
-      let postWiseLeaders = {};
-      voteData.forEach(candidate => {
-        let post = candidate.post;
-        if (!postWiseLeaders[post] || candidate.votes > postWiseLeaders[post].votes) {
-          postWiseLeaders[post] = candidate;
-        }
-      });
+        let postWiseLeaders = {};
 
-      let tableHTML = "<tr><th>Post</th><th>Candidate</th><th>Votes</th></tr>";
-      for (let post in postWiseLeaders) {
-        let leader = postWiseLeaders[post];
-        tableHTML += `<tr>
-          <td>${post}</td>
-          <td>${leader.name} ⏫</td>
-          <td>${leader.votes}</td>
-        </tr>`;
-      }
-      document.getElementById("leading-candidates-table").innerHTML = tableHTML;
-    }
-
-    function exportPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      let y = 10;
-
-      doc.setFontSize(14);
-      doc.text("📊 Live Vote Count Report", 10, y);
-      y += 10;
-
-      const posts = {};
-
-      globalVoteData.forEach(({ post, name, votes }) => {
-        if (!posts[post]) posts[post] = [];
-        posts[post].push({ name, votes });
-      });
-
-      for (const post in posts) {
-        doc.setFontSize(12);
-        doc.text(`\n🔹 ${post}`, 10, y);
-        y += 8;
-
-        posts[post].forEach(({ name, votes }) => {
-          doc.setFontSize(11);
-          doc.text(`- ${name}: ${votes} votes`, 12, y);
-          y += 7;
+        voteData.forEach(candidate => {
+            let post = candidate.post;
+            if (!postWiseLeaders[post] || candidate.votes > postWiseLeaders[post].votes) {
+                postWiseLeaders[post] = candidate;
+            }
         });
-        y += 5;
-      }
 
-      y += 10;
-      doc.setFontSize(10);
-      doc.text("Downloaded from: aminulmaz.blogspot.com/p/live-vote-count.html", 10, y);
+        let tableHTML = "<tr><th>Post</th><th>Candidate</th><th>Votes</th></tr>";
+        for (let post in postWiseLeaders) {
+            let leader = postWiseLeaders[post];
+            tableHTML += `<tr>
+                <td>${post}</td>
+                <td>${leader.name} ⏫</td>
+                <td>${leader.votes}</td>
+            </tr>`;
+        }
 
-      doc.save("Live_Vote_Report.pdf");
+        document.getElementById("leading-candidates-table").innerHTML = tableHTML;
     }
 
+    // Export PDF using html2canvas + jsPDF (clean rendering)
+    async function exportPDF() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+
+        const element = document.body; // Full page capture
+        const scale = 2; // Increase for better quality
+
+        const canvas = await html2canvas(element, { scale });
+        const imgData = canvas.toDataURL('image/png');
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+        // Add footer text (source URL)
+        const footerText = "Downloaded from: " + window.location.href;
+        pdf.setFontSize(10);
+        pdf.setTextColor(100);
+        pdf.text(footerText, 10, pdf.internal.pageSize.getHeight() - 10);
+
+        pdf.save('Live_Vote_Report.pdf');
+    }
+
+    // Set interval and event listeners
     setInterval(fetchVotes, 5000);
     fetchVotes();
-  </script>
+
+    document.getElementById('export-btn').addEventListener('click', exportPDF);
+</script>
 </body>
 </html>
