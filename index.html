@@ -2,258 +2,108 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AUSU Vote Counting Portal</title>
-  <style>
-    /* Reset and base styles */
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      background: #f4f6f8;
-      color: #333;
-      line-height: 1.6;
-    }
-    a {
-      text-decoration: none;
-      color: #0056b3;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-
-    /* Header */
-    header {
-      background: #003366;
-      color: white;
-      padding: 1.2rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.8rem;
-      font-weight: 700;
-    }
-    nav a {
-      color: white;
-      margin-left: 1.2rem;
-      font-weight: 600;
-      font-size: 1rem;
-    }
-
-    /* Hero section */
-    .hero {
-      background: url('https://images.unsplash.com/photo-1560264359-67ef03aaf77d?auto=format&fit=crop&w=1470&q=80') center/cover no-repeat;
-      color: white;
-      padding: 4rem 2rem;
-      text-align: center;
-      position: relative;
-    }
-    .hero::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 0;
-    }
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      max-width: 800px;
-      margin: auto;
-    }
-    .hero-content h2 {
-      font-size: 2.8rem;
-      margin-bottom: 1rem;
-      font-weight: 700;
-    }
-    .hero-content p {
-      font-size: 1.3rem;
-      margin-bottom: 2rem;
-      line-height: 1.4;
-    }
-    .btn-primary {
-      background: #007bff;
-      color: white;
-      padding: 0.75rem 1.6rem;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
-    }
-    .btn-primary:hover {
-      background: #0056b3;
-    }
-
-    /* Main content sections */
-    main {
-      max-width: 960px;
-      margin: 3rem auto 5rem;
-      padding: 0 1rem;
-    }
-    section {
-      margin-bottom: 3rem;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
-    }
-    section h3 {
-      color: #003366;
-      margin-bottom: 1rem;
-      font-weight: 700;
-      font-size: 1.8rem;
-    }
-    section p {
-      font-size: 1.1rem;
-      color: #444;
-    }
-    .vote-sections {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-top: 1rem;
-    }
-    .vote-section-card {
-      border: 1px solid #d1d9e6;
-      padding: 1.5rem;
-      border-radius: 8px;
-      transition: box-shadow 0.3s ease;
-      background: #f9fbfd;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .vote-section-card:hover {
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-    }
-    .vote-section-card h4 {
-      margin-top: 0;
-      margin-bottom: 0.8rem;
-      color: #007bff;
-    }
-    .vote-section-card p {
-      flex-grow: 1;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      color: #555;
-    }
-    .btn-secondary {
-      background: #e0e6f8;
-      color: #003366;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 600;
-      text-align: center;
-      transition: background-color 0.3s ease;
-    }
-    .btn-secondary:hover {
-      background: #c5d1ff;
-    }
-
-    /* Footer */
-    footer {
-      background: #003366;
-      color: white;
-      text-align: center;
-      padding: 1.5rem 1rem;
-      font-size: 0.9rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      nav {
-        margin-top: 0.7rem;
-      }
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AUSU Live Vote Count Update</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 p-4">
 
-  <header>
-    <h1>AUSU Vote Counting Portal</h1>
-    <nav>
-      <a href="#about">About</a>
-      <a href="#sections">Vote Sections</a>
-      <a href="#live">Live Vote Count</a>
-      <a href="#contact">Contact</a>
-    </nav>
-  </header>
+  <h1 class="text-2xl font-bold text-center text-blue-700 mb-4">District-wise COVID-19 Tracker</h1>
+  <div class="text-center mb-4">
+    <button id="export-btn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Export as PDF</button>
+  </div>
 
-  <section class="hero" role="banner" aria-label="Portal Introduction">
-    <div class="hero-content">
-      <h2>Welcome to AUSU Vote Counting Portal</h2>
-      <p>Your trusted platform for transparent and real-time vote counting of all AUSU elections.</p>
-      <button class="btn-primary" onclick="location.href='live-vote-count.html'">Go to Live Vote Count</button>
-    </div>
-  </section>
+  <div id="loader" class="text-center py-10 text-lg text-blue-500">Loading data...</div>
 
-  <main>
+  <div id="table-container" class="overflow-x-auto hidden">
+    <table id="covid-table" class="min-w-full divide-y divide-gray-200 bg-white shadow-md rounded-lg">
+      <thead class="bg-blue-600 text-white">
+        <tr id="table-head"></tr>
+      </thead>
+      <tbody id="table-body" class="divide-y divide-gray-200"></tbody>
+    </table>
+  </div>
 
-    <section id="about" aria-labelledby="about-heading">
-      <h3 id="about-heading">About the Portal</h3>
-      <p>
-        The AUSU Vote Counting Portal is designed to provide accurate, transparent, and up-to-date results of all student union and committee elections within AUSU. This platform ensures that students, faculty, and stakeholders can easily monitor the progress of vote counting in multiple categories with full confidence.
-      </p>
-    </section>
+  <!-- jsPDF and AutoTable libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
-    <section id="sections" aria-labelledby="sections-heading">
-      <h3 id="sections-heading">Vote Counting Sections</h3>
-      <div class="vote-sections">
+  <script>
+    const sheetID = '18aY0SxIemeSwZ5H7MPWBViBWQaRVM8WUbfkre1riLIM';
+    const sheetName = 'Sheet1';
+    const apiURL = `https://opensheet.elk.sh/${sheetID}/${sheetName}`;
 
-        <article class="vote-section-card" aria-labelledby="student-council-heading">
-          <h4 id="student-council-heading">Student Council Elections</h4>
-          <p>Count and monitor votes for the AUSU Student Council posts including President, Vice President, Secretary, and Treasurer.</p>
-          <button class="btn-secondary" onclick="location.href='live-vote-count.html#student-council'">View Live Results</button>
-        </article>
+    let tableData = [];
+    let tableHeaders = [];
 
-        <article class="vote-section-card" aria-labelledby="sports-committee-heading">
-          <h4 id="sports-committee-heading">Sports Committee</h4>
-          <p>Track election results for the Sports Committee representatives who will promote sports activities across campus.</p>
-          <button class="btn-secondary" onclick="location.href='live-vote-count.html#sports-committee'">View Live Results</button>
-        </article>
+    fetch(apiURL)
+      .then(res => res.json())
+      .then(data => {
+        const loader = document.getElementById("loader");
+        const table = document.getElementById("table-container");
+        const thead = document.getElementById("table-head");
+        const tbody = document.getElementById("table-body");
 
-        <article class="vote-section-card" aria-labelledby="cultural-council-heading">
-          <h4 id="cultural-council-heading">Cultural Council</h4>
-          <p>Stay updated with the vote count for cultural committee posts organizing events and festivals.</p>
-          <button class="btn-secondary" onclick="location.href='live-vote-count.html#cultural-council'">View Live Results</button>
-        </article>
+        if (!data || data.length === 0) {
+          loader.textContent = "No data available.";
+          return;
+        }
 
-        <article class="vote-section-card" aria-labelledby="technical-society-heading">
-          <h4 id="technical-society-heading">Technical Society</h4>
-          <p>Follow the live counting for the Technical Society posts responsible for tech events and workshops.</p>
-          <button class="btn-secondary" onclick="location.href='live-vote-count.html#technical-society'">View Live Results</button>
-        </article>
+        tableHeaders = Object.keys(data[0]);
 
-      </div>
-    </section>
+        // Render headers
+        tableHeaders.forEach(header => {
+          const th = document.createElement("th");
+          th.textContent = header;
+          th.className = "px-4 py-2 text-left";
+          thead.appendChild(th);
+        });
 
-    <section id="live" aria-labelledby="live-heading">
-      <h3 id="live-heading">Why Real-Time Vote Counting Matters</h3>
-      <p>
-        Transparent vote counting builds trust in the election process and empowers students to be actively involved. Our portal guarantees timely updates so you never miss a single vote count. It also reduces disputes by providing clear, official data accessible to everyone.
-      </p>
-    </section>
+        // Render rows and store for export
+        data.forEach(row => {
+          const tr = document.createElement("tr");
+          const rowData = [];
+          tableHeaders.forEach(header => {
+            const td = document.createElement("td");
+            td.textContent = row[header] || '';
+            td.className = "px-4 py-2";
+            tr.appendChild(td);
+            rowData.push(row[header] || '');
+          });
+          tbody.appendChild(tr);
+          tableData.push(rowData);
+        });
 
-  </main>
+        loader.classList.add("hidden");
+        table.classList.remove("hidden");
+      })
+      .catch(err => {
+        document.getElementById("loader").textContent = "Error loading data.";
+        console.error("Data fetch error:", err);
+      });
 
-  <footer id="contact" role="contentinfo">
-    <p>Contact us: <a href="mailto:support@ausuvote.edu">support@ausuvote.edu</a></p>
-    <p>© 2025 AUSU Vote Counting Portal. All rights reserved.</p>
-  </footer>
+    document.getElementById("export-btn").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('l', 'mm', 'a4'); // landscape mode for wide tables
 
+      doc.text("AUSU Vote Count", 14, 15);
+      doc.autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: 20,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+        },
+        theme: 'grid',
+        didDrawPage: function (data) {
+          doc.setFontSize(10);
+          doc.text(`Page ${doc.internal.getNumberOfPages()}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+        }
+      });
+
+      doc.save("Ausuvote-count.pdf");
+    });
+  </script>
 </body>
 </html>
