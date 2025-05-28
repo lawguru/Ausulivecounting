@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>District-wise COVID-19 Tracker</title>
+  <title>AUSU Live Vote Count Update</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-4">
@@ -86,7 +86,7 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('l', 'mm', 'a4'); // landscape mode for wide tables
 
-      doc.text("District-wise COVID-19 Tracker", 14, 15);
+      doc.text("AUSU Vote Count", 14, 15);
       doc.autoTable({
         head: [tableHeaders],
         body: tableData,
@@ -102,33 +102,8 @@
         }
       });
 
-      doc.save("COVID-Tracker.pdf");
+      doc.save("Ausuvote-count.pdf");
     });
   </script>
-  <div id="notice-banner" class="hidden bg-yellow-300 text-black px-4 py-2 text-center font-semibold text-sm shadow-md"></div>
-  <script>
-  const configSheetID = '18aY0SxIemeSwZ5H7MPWBViBWQaRVM8WUbfkre1riLIM'; // Same Sheet ID
-  const configSheetName = 'config';
-
-  async function fetchNotice() {
-    try {
-      const url = `https://opensheet.elk.sh/${configSheetID}/${configSheetName}`;
-      const res = await fetch(url);
-      const configData = await res.json();
-
-      const noticeEntry = configData.find(entry => entry.key === 'pinned_notice');
-      if (noticeEntry && noticeEntry.value.trim() !== '') {
-        const banner = document.getElementById('notice-banner');
-        banner.textContent = noticeEntry.value;
-        banner.classList.remove('hidden');
-      }
-    } catch (error) {
-      console.error("Notice fetch failed:", error);
-    }
-  }
-
-  // Call the function
-  fetchNotice();
-</script>
 </body>
 </html>
