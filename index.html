@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>COVID-19 India Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 10px;
+        background: #f4f6f8;
+        color: #222;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .header h1 {
+        font-size: 22px;
+        margin: 0;
+      }
+
+      .header p {
+        font-size: 14px;
+        color: #666;
+      }
+
+      .stats {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      .card {
+        flex: 1 1 calc(50% - 10px);
+        background: #fff;
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .card h3 {
+        margin: 0;
+        font-size: 15px;
+        color: #444;
+      }
+
+      .card p {
+        font-size: 18px;
+        margin-top: 5px;
+        font-weight: bold;
+      }
+
+      .table-container {
+        overflow-x: auto;
+        background: #fff;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      #searchInput {
+        width: 100%;
+        padding: 8px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+      }
+
+      #disclaimer-box {
+        background: #fff3cd;
+        border-left: 6px solid #ffecb5;
+        color: #856404;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 14px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+      }
+
+      button#downloadBtn {
+        background-color: #2196f3;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 15px auto;
+        display: block;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      button#downloadBtn:hover {
+        background-color: #1769aa;
+      }
+
+      @media screen and (max-width: 600px) {
+        .card {
+          flex: 1 1 100%;
+        }
+
+        .header h1 {
+          font-size: 20px;
+        }
+      }
+    </style>
+    <script>
+      let rawData = null;
+
+      google.charts.load("current", { packages: ["table", "corechart"] });
+      google.charts.setOnLoadCallback(fetchAndRender);
+
+      function fetchAndRender() {
+        const query = new google.visualization.Query(
+          "https://docs.google.com/spreadsheets/d/18aY0SxIemeSwZ5H7MPWBViBWQaRVM8WUbfkre1riLIM/gviz/tq?sheet=Data"
+        );
+        query.send((response) => {
+          if (response.isError()) {
+            alert("Error fetching data");
+            return;
+          }
+          rawData = response.getDataTable();
+          renderTable(rawData);
+          renderStats(rawData);
+          // No pie chart rendering needed in PDF, so we skip that here
+          renderPie(rawData); // You can keep it to display on page only
+        });
+      }
+
+      function renderTable(data) {
+        const table = new google.visualization.Table(
+          document.getElementById("table_div")
+        );
+        table.draw(data, { width: "100%", height: "100%" });
+        document.getElementById("searchInput").addEventListener("keyup", function () {
+          const keyword = this.value.toLowerCase();
+          const view = new google.visualization.DataView(data);
+          view.setRows(
+            data.getFilteredRows([{ column: 1, test: (v) => v.toLowerCase().includes(keyword) }])
+          );
+          table.draw(view, { width: "100%", height: "100%" });
+        });
+      }
+
+      function renderStats(data) {
+        let confirmed = 0,
+          active = 0,
+          recovered = 0,
+          deceased = 0;
+        for (let i = 0; i < data.getNumberOfRows(); i++) {
+          confirmed += parseInt(data.getValue(i, 2)) || 0;
+          active += parseInt(data.getValue(i, 3)) || 0;
+          recovered += parseInt(data.getValue(i, 4)) || 0;
+          deceased += parseInt(data.getValue(i, 5)) || 0;
+        }
+        document.getElementById("confirmed").textContent = confirmed.toLocaleString();
+        document.getElementById("active").textContent = active.toLocaleString();
+        document.getElementById("recovered").textContent = recovered.toLocaleString();
+        document.getElementById("deceased").textContent = deceased.toLocaleString();
+      }
+
+      function renderPie(data) {
+        let confirmed = 0,
+          active = 0,
+          recovered = 0,
+          deceased = 0;
+        for (let i = 0; i < data.getNumberOfRows(); i++) {
+          confirmed += parseInt(data.getValue(i, 2)) || 0;
+          active += parseInt(data.getValue(i, 3)) || 0;
+          recovered += parseInt(data.getValue(i, 4)) || 0;
+          deceased += parseInt(data.getValue(i, 5)) || 0;
+        }
+
+        const pieData = google.visualization.arrayToDataTable([
+          ["Category", "Cases"],
+          ["Active", active],
+          ["Recovered", recovered],
+          ["Deceased", deceased],
+        ]);
+
+        const options = {
+          title: "Case Distribution",
+          pieHole: 0.4,
+          chartArea: { width: "90%", height: "80%" },
+        };
+
+        const chart = new google.visualization.PieChart(
+          document.getElementById("piechart")
+        );
+        chart.draw(pieData, options);
+      }
+
+      // Auto-refresh every 5 mins
+      setInterval(() => {
+        fetchAndRender();
+      }, 300000);
+
+      // Verification Code generator
+      function generateVerificationCode() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const d = String(now.getDate()).padStart(2, "0");
+        const hh = String(now.getHours()).padStart(2, "0");
+        const mm = String(now.getMinutes()).padStart(2, "0");
+        const ss = String(now.getSeconds()).padStart(2, "0");
+        return `${y}${m}${d}-${hh}${mm}${ss}`;
+      }
+
+      async function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+
+        // Get table container
+        const tableContainer = document.querySelector(".table-container");
+
+        // Capture the table only as canvas
+        const canvas = await html2canvas(tableContainer, {
+          scale: 2,
+          scrollY: -window.scrollY,
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "pt", "a4");
+
+        const pdfWidth = pdf.internal.pageSize.getWidth() - 40; // margin 20 left+right
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        // Draw the table image
+        pdf.addImage(imgData, "PNG", 20, 20, pdfWidth, pdfHeight);
+
+        // Add footer text below image
+        const footerYStart = pdfHeight + 40;
+
+        pdf.setFontSize(10);
+        pdf.setTextColor(100);
+        const footerText =
+          "This report is generated from COVID-19 India Live Tracker website and data should be verified independently.";
+        const textWidth = pdf.getTextWidth(footerText);
+        const xPos = (pdfWidth + 40 - textWidth) / 2; // 40 is margin total
+        pdf.text(footerText, xPos, footerYStart);
+
+        const verificationCode = generateVerificationCode();
+        const verificationText = "VERIFICATION ID: " + verificationCode;
+        const verificationTextWidth = pdf.getTextWidth(verificationText);
+        const vXPos = (pdfWidth + 40 - verificationTextWidth) / 2;
+        pdf.text(verificationText, vXPos, footerYStart + 20);
+
+        pdf.save("COVID19_India_Report.pdf");
+      }
+    </script>
+  </head>
+  <body>
+    <div class="header">
+      <h1>COVID-19 India Live Tracker</h1>
+      <p>Auto-updating | Powered by Google Sheets</p>
+    </div>
+
+    <div id="disclaimer-box">
+      Disclaimer: Data collected from Ministry of Health and Family Welfare,GOI Covid Dashboard. Please verify with official sources.
+    </div>
+
+    <div class="stats">
+      <div class="card" style="border-top: 4px solid #f44336;">
+        <h3>Confirmed</h3>
+        <p id="confirmed">0</p>
+      </div>
+      <div class="card" style="border-top: 4px solid #2196F3;">
+        <h3>Active</h3>
+        <p id="active">0</p>
+      </div>
+      <div class="card" style="border-top: 4px solid #4CAF50;">
+        <h3>Recovered</h3>
+        <p id="recovered">0</p>
+      </div>
+      <div class="card" style="border-top: 4px solid #9E9E9E;">
+        <h3>Deceased</h3>
+        <p id="deceased">0</p>
+      </div>
+    </div>
+
+    <input type="text" id="searchInput" placeholder="Search by state..." />
+
+    <div class="table-container">
+      <div id="table_div"></div>
+    </div>
+
+    <button id="downloadBtn" onclick="downloadPDF()">
+      Download Report as PDF
+    </button>
+
+    <div id="piechart" style="width: 100%; height: 300px;"></div>
+  </body>
+</html>
