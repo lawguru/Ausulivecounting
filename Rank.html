@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UPSC Prelims Result Predictor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef4f7;
+      padding: 2rem;
+      text-align: center;
+    }
+    .container {
+      background: #fff;
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    input {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #3498db;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2980b9;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #34495e;
+    }
+    .cutoffs {
+      text-align: left;
+      margin-top: 20px;
+    }
+    .cutoffs table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .cutoffs th, .cutoffs td {
+      padding: 8px;
+      border: 1px solid #ccc;
+    }
+    .cutoffs th {
+      background: #f7f7f7;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>UPSC Prelims Result Predictor</h1>
+    <form id="predictorForm">
+      <label for="attempted">Total Questions Attempted:</label>
+      <input type="number" id="attempted" required>
+
+      <label for="correct">Expected Correct Answers:</label>
+      <input type="number" id="correct" required>
+
+      <button type="submit">Predict</button>
+    </form>
+
+    <div class="result" id="output"></div>
+
+    <div class="cutoffs" id="cutoffTable" style="display:none;">
+      <h3>🔍 Cutoff Comparison (General Category)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Cutoff (2023)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="cutoffRows">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const cutoffs = [
+      { source: "UPSC Official (GEN)", value: 75.41 },
+      { source: "Vision IAS (Predicted)", value: 84.0 },
+      { source: "ForumIAS (Predicted)", value: 83.5 },
+      { source: "Vajiram & Ravi (Predicted)", value: 82.0 }
+    ];
+
+    document.getElementById("predictorForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const attempted = parseInt(document.getElementById("attempted").value);
+      const correct = parseInt(document.getElementById("correct").value);
+      const wrong = attempted - correct;
+
+      const score = (correct * 2) - (wrong * 0.66);
+
+      // Score result
+      let msg = `<strong>Your Estimated Score:</strong> ${score.toFixed(2)} / 200<br><br>`;
+      
+      // Add table rows
+      let tableRows = "";
+      cutoffs.forEach(cutoff => {
+        const status = score >= cutoff.value ? "✅ Above" : "❌ Below";
+        const color = score >= cutoff.value ? "green" : "red";
+        tableRows += `<tr><td>${cutoff.source}</td><td>${cutoff.value}</td><td style="color:${color}">${status}</td></tr>`;
+      });
+
+      // Prediction line
+      let prediction = "";
+      if (score >= 95) {
+        prediction = "🎯 Excellent! You’re well above most predictions.";
+      } else if (score >= 85) {
+        prediction = "🟡 Borderline zone. Cutoff may vary.";
+      } else {
+        prediction = "❌ Below expected cutoffs. Stay strong, CSAT might help!";
+      }
+
+      document.getElementById("output").innerHTML = msg + "<strong>Prediction:</strong> " + prediction;
+      document.getElementById("cutoffRows").innerHTML = tableRows;
+      document.getElementById("cutoffTable").style.display = "block";
+    });
+  </script>
+</body>
+</html>
